@@ -6,8 +6,23 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0A0C",
-    "android": { "package": "com.keep6.tfg", "permissions": ["CAMERA"] },
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.keep6.tfg", "infoPlist": { "NSCameraUsageDescription": "Used to photograph items for grading." } },
-    "plugins": [["expo-camera", { "cameraPermission": "Allow The Frenchman's Grades to use the camera to grade your items." }]]
+    "splash": {
+      "backgroundColor": "#0A0A0C",
+      "resizeMode": "contain"
+    },
+    "android": {
+      "package": "com.keep6.tfg",
+      "permissions": ["CAMERA"]
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.keep6.tfg",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to photograph items for grading."
+      }
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Allow The Frenchman's Grades to use the camera to grade your items." }]
+    ]
   }
 }
