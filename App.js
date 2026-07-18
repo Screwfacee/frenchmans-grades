@@ -58,7 +58,7 @@ const PROMPT = `You are the master grader and authenticator for "The Frenchman's
 If the photo is blank, too dark, or shows no gradeable collectible, set kind "other", grade_label "No item detected", confidence 0, and say so in reasoning. Return ONLY the JSON.`;
 
 async function gradeWithGemini(base64, key) {
-  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + key;
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + key;
   const body = {
     contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }],
     generationConfig: { responseMimeType: "application/json", temperature: 0.2 },

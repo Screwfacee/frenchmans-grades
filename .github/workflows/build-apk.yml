@@ -26,6 +26,10 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas update:configure --non-interactive || true
+      - name: Publish OTA update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas update --branch preview --message "model fix gemini-flash-latest" --non-interactive || true
       - name: EAS build APK
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -36,10 +40,6 @@ jobs:
           echo "APK_URL=$URL"
           curl -L -o TheFrenchmansGrades.apk "$URL"
           ls -la TheFrenchmansGrades.apk
-      - name: Publish OTA baseline
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update --branch preview --message "v1.1.1 OTA baseline" --non-interactive || true
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
