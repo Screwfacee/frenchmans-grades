@@ -20,7 +20,8 @@
     "@expo-google-fonts/inter": "^0.2.3",
     "react": "18.2.0",
     "react-native": "0.74.5",
-    "react-native-svg": "15.2.0"
+    "react-native-svg": "15.2.0",
+    "expo-updates": "~0.25.27"
   },
   "private": true
 }
