@@ -22,7 +22,7 @@ jobs:
         run: npm install
       - name: Expo prebuild (Android)
         run: npx expo prebuild --platform android --no-install
-      - name: Build release APK (arm64 only)
+      - name: Build release APK (arm64)
         run: |
           cd android
           chmod +x gradlew
@@ -32,6 +32,6 @@ jobs:
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: The Frenchman's Grades v1.0.1
+          tag_name: v1.1.0
+          name: The Frenchman's Grades v1.1.0
           files: TheFrenchmansGrades.apk
