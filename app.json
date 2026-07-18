@@ -2,7 +2,8 @@
   "expo": {
     "name": "The Frenchman's Grades",
     "slug": "tfg-mobile",
-    "version": "1.1.0",
+    "version": "1.1.2",
+    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#101018",
@@ -14,6 +15,11 @@
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.keep6.tfg",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101018"
+      },
       "permissions": ["CAMERA"]
     },
     "ios": {

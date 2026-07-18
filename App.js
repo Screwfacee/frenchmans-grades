@@ -198,30 +198,14 @@ function Landing({ onEnter }) {
 /* ============ API key onboarding ============ */
 function KeyOnboarding({ visible, onClose, onSaved }) {
   const [manual, setManual] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [msg, setMsg] = useState("");
 
   async function openStudio() {
-    setMsg("");
-    await Clipboard.setStringAsync(""); // clear so we detect a fresh copy
     await WebBrowser.openBrowserAsync("https://aistudio.google.com/app/apikey");
-    // on return, auto-read clipboard
-    setChecking(true);
-    try {
-      const clip = await Clipboard.getStringAsync();
-      if (looksLikeKey(clip)) { const k = extractKey(clip); await saveKey(k); onSaved(k); setMsg(""); return; }
-      setMsg("Copied your key? Paste it below — I couldn't read it from the clipboard automatically.");
-    } catch { setMsg("Paste your key below."); }
-    setChecking(false);
   }
   async function useManual() {
-    const k = extractKey(manual);
-    if (!k) { setMsg("That doesn't look like a Google AI key (starts with AIza…)."); return; }
+    const k = (manual || "").trim();
+    if (!k) return;
     await saveKey(k); onSaved(k);
-  }
-  async function pasteClip() {
-    const clip = await Clipboard.getStringAsync();
-    if (looksLikeKey(clip)) setManual(extractKey(clip)); else setMsg("Clipboard doesn't have a key yet.");
   }
 
   return (
@@ -233,16 +217,12 @@ function KeyOnboarding({ visible, onClose, onSaved }) {
           <Text style={st.modalBody}>Grading is powered by Google's AI. Get your own <Text style={{ color: C.gold, fontFamily: SERIF }}>free</Text> key — it takes 20 seconds and stays private on your phone.</Text>
           <TouchableOpacity activeOpacity={0.85} onPress={openStudio}>
             <LinearGradient colors={["#F6E6B4", "#D3B77E", "#B8935A"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.modalCta}>
-              <Text style={st.modalCtaT}>{checking ? "Reading your key…" : "Get my free key  →"}</Text>
+              <Text style={st.modalCtaT}>Get my free key  →</Text>
             </LinearGradient>
           </TouchableOpacity>
-          <Text style={st.modalHint}>Opens Google AI Studio · tap "Create API key" · Copy it · come back here — I'll grab it automatically.</Text>
-          <View style={st.orRow}><View style={st.orLine} /><Text style={st.orTxt}>or paste it</Text><View style={st.orLine} /></View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TextInput value={manual} onChangeText={setManual} placeholder="AIza…" placeholderTextColor={C.muted} autoCapitalize="none" autoCorrect={false} style={st.input} />
-            <TouchableOpacity style={st.pasteBtn} onPress={pasteClip}><Text style={{ color: C.gold, fontFamily: SANS_B, fontSize: 13 }}>Paste</Text></TouchableOpacity>
-          </View>
-          {msg ? <Text style={st.modalErr}>{msg}</Text> : null}
+          <Text style={st.modalHint}>Open Google AI Studio · tap "Create API key" · copy it · come back here.</Text>
+          <TextInput value={manual} onChangeText={setManual} placeholder="Paste key here" placeholderTextColor={C.muted} autoCapitalize="none" autoCorrect={false} style={[st.input, { flex: 0, alignSelf: "stretch", marginTop: 14 }]} />
+          <Text style={{ color: C.muted, fontSize: 11, fontFamily: SANS, marginTop: 6, marginLeft: 2 }}>API key</Text>
           <TouchableOpacity style={st.saveBtn} onPress={useManual}><Text style={{ color: C.ink, fontFamily: SANS_B }}>Save key</Text></TouchableOpacity>
           <TouchableOpacity onPress={onClose}><Text style={st.modalSkip}>Not now</Text></TouchableOpacity>
         </View>
