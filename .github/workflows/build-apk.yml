@@ -1,48 +1,113 @@
-name: Build Android APK
+name: Build Verified Standalone Android APK
+
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - "App.js"
+      - "index.js"
+      - "app.json"
+      - "package.json"
+      - "package-lock.json"
+      - "babel.config.js"
+      - "assets/**"
+      - ".github/workflows/build-apk.yml"
+
 permissions:
   contents: write
+
 jobs:
-  build:
+  build-and-verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
-      - name: Install dependencies
-        run: npm install
-      - name: Link EAS project
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas init --non-interactive --force
-      - name: Configure updates (OTA)
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update:configure --non-interactive || true
-      - name: Publish OTA update
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update --branch preview --message "model fix gemini-flash-latest" --non-interactive || true
-      - name: EAS build APK
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          cache: npm
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Generate clean native Android project
+        run: npx expo prebuild --platform android --clean --non-interactive
+
+      - name: Build standalone release APK
+        working-directory: android
+        run: ./gradlew --no-daemon clean assembleRelease
+
+      - name: Locate release APK
+        id: apk
+        shell: bash
         run: |
-          eas build --platform android --profile preview --non-interactive --wait --json > build.json
-          cat build.json
-          URL=$(node -e "const b=require('./build.json');const x=Array.isArray(b)?b[0]:b;console.log((x.artifacts&&(x.artifacts.applicationArchiveUrl||x.artifacts.buildUrl))||'')")
-          echo "APK_URL=$URL"
-          curl -L -o TheFrenchmansGrades.apk "$URL"
-          ls -la TheFrenchmansGrades.apk
-      - name: Publish Release
+          set -euo pipefail
+          APK=$(find android/app/build/outputs/apk/release -maxdepth 1 -type f -name "*.apk" | head -n 1)
+          test -n "$APK"
+          test -s "$APK"
+          cp "$APK" The-Frenchmans-Grades-v1.1.3-standalone.apk
+          echo "path=The-Frenchmans-Grades-v1.1.3-standalone.apk" >> "$GITHUB_OUTPUT"
+          ls -lh The-Frenchmans-Grades-v1.1.3-standalone.apk
+
+      - name: Verify JavaScript bundle is packaged
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -l The-Frenchmans-Grades-v1.1.3-standalone.apk | tee apk-contents.txt
+          grep -Eq "assets/(index.android.bundle|.*\.bundle)" apk-contents.txt
+
+      - name: Verify APK identity and release manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)
+          "$APKSIGNER" verify --verbose --print-certs The-Frenchmans-Grades-v1.1.3-standalone.apk | tee signature-verification.txt
+          "$AAPT" dump badging The-Frenchmans-Grades-v1.1.3-standalone.apk | tee apk-badging.txt
+          grep -q "package: name='com.keep6.tfg'" apk-badging.txt
+          grep -q "versionCode='4'" apk-badging.txt
+          grep -q "versionName='1.1.3'" apk-badging.txt
+          ! grep -qi "application-debuggable" apk-badging.txt
+
+      - name: Upload verified APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frenchmans-grades-v1.1.3-standalone
+          path: |
+            The-Frenchmans-Grades-v1.1.3-standalone.apk
+            apk-contents.txt
+            apk-badging.txt
+            signature-verification.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish verified GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.1
-          name: The Frenchman's Grades v1.1.1 (OTA)
-          files: TheFrenchmansGrades.apk
+          tag_name: v1.1.3-standalone-${{ github.run_number }}
+          name: The Frenchman's Grades v1.1.3 Standalone
+          body: |
+            Standalone Android APK built from the release variant.
+            Verification gates passed in CI:
+            - JavaScript bundle packaged inside the APK
+            - package name com.keep6.tfg
+            - versionName 1.1.3 / versionCode 4
+            - APK signature verified
+            - manifest is not debuggable
+          files: The-Frenchmans-Grades-v1.1.3-standalone.apk
